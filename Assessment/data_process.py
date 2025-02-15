@@ -217,3 +217,70 @@ df_conversation_expanded = df_conversations.assign(tags=df_conversations["tags"]
 tags_ag_category = df_conversation_expanded.groupby("tags")["category"].value_counts().unstack(fill_value=0)
 
 print(tags_ag_category)
+
+# time series of key metrics
+df_responses_by_agent["date"] = df_responses_by_agent["timestamp"].dt.date
+
+response_time_per_conv = df_responses_by_agent.groupby("date")["response_time"].mean().reset_index()
+response_time_per_conv.rename(columns={"response_time": "avg_response_time"}, inplace=True)
+
+plt.figure(figsize=(12, 6))
+plt.plot(response_time_per_conv["date"], response_time_per_conv["avg_response_time"], marker='o', linestyle='-', color='blue')
+
+plt.xlabel("Date")
+plt.ylabel("Average Response Time (seconds)")
+plt.title("Average Agent Response Time")
+plt.xticks(rotation=45)
+plt.grid(True)
+
+plt.savefig("images/avg_res_time.png")
+plt.close()
+
+# distribution plot
+plt.figure(figsize=(10, 6))
+sns.histplot(df_conversations['duration'], bins=30, kde=True, color='blue')
+
+plt.xlabel("Conversation Duration (seconds)")
+plt.ylabel("Frequency")
+plt.title("Distribution of Conversation Durations")
+
+plt.savefig("images/conv_count_dist.png")
+plt.close()
+
+# summary statistic
+category_resolved_summary = category_resolved_summary.reset_index()
+category_resolved_summary.rename(columns={False: "Unresolved", True: "Resolved"}, inplace=True)
+category_resolved_summary.set_index("category")[["Unresolved", "Resolved"]].plot(kind="bar", stacked=True, color=["red", "green"], figsize=(12, 6))
+
+plt.xlabel("Category")
+plt.ylabel("Number of Conversations")
+plt.title("Resolved vs Unresolved Conversations by Category")
+plt.xticks(rotation=45)
+plt.legend(title="Resolution Status")
+
+plt.savefig("images/resolve_count.png")
+plt.close()
+
+plt.figure(figsize=(12, 6))
+sns.heatmap(tags_ag_category, annot=True, cmap="coolwarm", linewidths=0.5, fmt="d")
+plt.title("Category vs. Tags Heatmap")
+plt.xlabel("Category")
+plt.ylabel("Tags")
+
+plt.savefig("images/tag_category.png")
+plt.close()
+
+# data quality metric
+missing_values_df = pd.DataFrame(conversations)
+
+missing_percent = (missing_values_df.isnull().sum() / len(missing_values_df)) * 100
+
+plt.figure(figsize=(10, 6))
+missing_percent.plot(kind='bar', color='red', alpha=0.7)
+plt.xlabel("Columns")
+plt.ylabel("Percentage Missing")
+plt.title("Missing Data Percentage per Column")
+plt.xticks(rotation=45)
+
+plt.savefig("images/miss_data_col.png")
+plt.close()
